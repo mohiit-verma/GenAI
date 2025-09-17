@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TutorAI — End‑to‑End RAG Flow</title>
+<style>
+  :root{
+    --bg:#0b1020; --ink:#e8ecf4; --muted:#b7c1d6;
+    --acc:#7aa2ff; --acc2:#2bd4c5; --warn:#ffb86c; --bad:#ff6b6b;
+    --card:#121832; --chip:#0e1530; --line:#1b2442;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:2rem; background:var(--bg); color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    line-height:1.55;
+  }
+  h1,h2,h3{margin:0 0 .6rem 0}
+  h1{font-size:1.9rem}
+  h2{font-size:1.35rem; color:var(--acc)}
+  h3{font-size:1.05rem; color:var(--muted)}
+  .wrap{max-width:1200px; margin:0 auto; display:grid; gap:1rem}
+  .grid{display:grid; gap:1rem}
+  .cols-2{grid-template-columns: 1.1fr .9fr}
+  .card{
+    background:linear-gradient(180deg, var(--card), #0e1530 60%);
+    border:1px solid var(--line);
+    border-radius:16px; padding:1rem 1rem 1.1rem;
+    box-shadow: 0 6px 24px rgba(0,0,0,.25);
+  }
+  .pill{display:inline-block; padding:.25rem .6rem; border-radius:999px; font-size:.8rem; background:var(--chip); color:var(--muted); border:1px solid var(--line)}
+  code, pre{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+  pre{background:#0a1026; border:1px solid var(--line); padding:.75rem; border-radius:12px; overflow:auto}
+  .kvs{display:grid; grid-template-columns: 180px 1fr; gap:.4rem .8rem; margin-top:.5rem}
+  .kv{display:contents}
+  .kv b{color:var(--muted)}
+  .chips{display:flex; flex-wrap:wrap; gap:.5rem; margin:.4rem 0}
+  .chip{background:var(--chip); border:1px solid var(--line); color:var(--ink); padding:.25rem .55rem; border-radius:10px; font-size:.82rem}
+  .warn{color:var(--warn)}
+  .bad{color:var(--bad)}
+  .ok{color:var(--acc2)}
+  .mini{font-size:.92rem; color:var(--muted)}
+  .hr{height:1px; background:var(--line); margin:.75rem 0}
+  /* Flow SVG container */
+  .svg-wrap{background:linear-gradient(180deg, rgba(122,162,255,.06), rgba(43,212,197,.06)); border:1px solid var(--line); border-radius:16px; padding:.5rem}
+  .legend{display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.5rem}
+  .legend span{font-size:.8rem; color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="chips">
+        <span class="chip">Project: TutorAI (RAG)</span>
+        <span class="chip">Source of Truth: “Storytelling with Data”</span>
+        <span class="chip">Vector Store: FAISS</span>
+        <span class="chip">Embeddings: all‑MiniLM‑L6‑v2 (normalized)</span>
+        <span class="chip">Frontend: Gradio</span>
+      </div>
+      <h1>End‑to‑End Flow</h1>
+      <div class="mini">This page shows how data moves through the system: utilities → indexing → retrieval → prompt assembly → generation → guardrails, including conditions for chit‑chat and similarity cutoff.</div>
+    </div>
+
+    <div class="card svg-wrap">
+      <h2>High‑Level Data Flow</h2>
+      <svg viewBox="0 0 1200 520" width="100%" height="auto">
+        <!-- defs -->
+        <defs>
+          <linearGradient id="g1" x1="0" x2="1">
+            <stop offset="0" stop-color="#7aa2ff" stop-opacity=".3"/>
+            <stop offset="1" stop-color="#2bd4c5" stop-opacity=".3"/>
+          </linearGradient>
+          <style>
+            .box{fill:#0e1530; stroke:#1b2442; stroke-width:1.2; rx:12; ry:12}
+            .title{fill:#e8ecf4; font-size:13px; font-weight:700}
+            .txt{fill:#b7c1d6; font-size:12px}
+            .wire{stroke:url(#g1); stroke-width:2.2; fill:none; marker-end:url(#arrow)}
+          </style>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L10,3 L0,6 z" fill="#7aa2ff"/>
+          </marker>
+        </defs>
+
+        <!-- Row 1 -->
+        <rect x="20" y="30" width="260" height="120" class="box"/>
+        <text x="40" y="58" class="title">Utilities</text>
+        <text x="40" y="82" class="txt">• process_book_url</text>
+        <text x="40" y="102" class="txt">• download_pdf → <tspan class="ok">pdf_bytes</tspan></text>
+        <text x="40" y="122" class="txt">• read_pdf_pages → [page_number, text]</text>
+
+        <rect x="330" y="30" width="290" height="120" class="box"/>
+        <text x="350" y="58" class="title">Chunking & Embeddings</text>
+        <text x="350" y="82" class="txt">• RecursiveCharacterTextSplitter</text>
+        <text x="350" y="102" class="txt">• all‑MiniLM‑L6‑v2 (normalized)</text>
+        <text x="350" y="122" class="txt">• Documents carry page metadata</text>
+
+        <rect x="660" y="30" width="240" height="120" class="box"/>
+        <text x="680" y="58" class="title">Vector Store</text>
+        <text x="680" y="82" class="txt">• FAISS index</text>
+        <text x="680" y="102" class="txt">• save/load local</text>
+
+        <rect x="930" y="30" width="250" height="120" class="box"/>
+        <text x="950" y="58" class="title">Dashboard Controls</text>
+        <text x="950" y="82" class="txt">• Model, Top‑K</text>
+        <text x="950" y="102" class="txt">• Temperature</text>
+        <text x="950" y="122" class="txt">• Similarity cutoff</text>
+
+        <!-- wires top row -->
+        <path d="M280,90 C310,90 310,90 330,90" class="wire"/>
+        <path d="M620,90 C640,90 640,90 660,90" class="wire"/>
+        <path d="M900,90 C920,90 920,90 930,90" class="wire"/>
+
+        <!-- Row 2 -->
+        <rect x="20" y="200" width="320" height="140" class="box"/>
+        <text x="40" y="228" class="title">Conversation Pipeline</text>
+        <text x="40" y="252" class="txt">• Intent: chit‑chat vs book_qa</text>
+        <text x="40" y="272" class="txt">• Retrieve top‑K → apply cutoff</text>
+        <text x="40" y="292" class="txt">• Format context + prompt</text>
+
+        <rect x="380" y="200" width="360" height="140" class="box"/>
+        <text x="400" y="228" class="title">Prompt Assembly</text>
+        <text x="400" y="252" class="txt">System + History + User Query</text>
+        <text x="400" y="272" class="txt">+ Context (with page tags)</text>
+        <text x="400" y="292" class="txt">+ Guidelines (cite (p. N), refuse if OOD)</text>
+
+        <rect x="770" y="200" width="410" height="140" class="box"/>
+        <text x="790" y="228" class="title">LLM Generation + Guardrails</text>
+        <text x="790" y="252" class="txt">• Selected open‑source model</text>
+        <text x="790" y="272" class="txt">• Guardrail: ensure citations for book_qa</text>
+        <text x="790" y="292" class="txt">• Refusal when no context</text>
+
+        <!-- wires middle row -->
+        <path d="M340,270 C360,270 360,270 380,270" class="wire"/>
+        <path d="M740,270 C760,270 760,270 770,270" class="wire"/>
+
+        <!-- Row 3 -->
+        <rect x="20" y="380" width="520" height="110" class="box"/>
+        <text x="40" y="408" class="title">Inputs</text>
+        <text x="40" y="432" class="txt">• User question (dashboard)</text>
+        <text x="40" y="452" class="txt">• Controls: top‑K, temperature, similarity cutoff, model</text>
+
+        <rect x="560" y="380" width="620" height="110" class="box"/>
+        <text x="580" y="408" class="title">Outputs</text>
+        <text x="580" y="432" class="txt">• Answer text</text>
+        <text x="580" y="452" class="txt">• Citations: page numbers from retrieved blocks (or parsed from answer)</text>
+
+        <!-- wires bottom row -->
+        <path d="M540,435 C555,435 560,435 560,435" class="wire"/>
+      </svg>
+      <div class="legend">
+        <span class="pill">Legend</span>
+        <span>Blue/green lines show data flow between stages.</span>
+        <span>Boxes represent major components.</span>
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Key Conditions (Routing & Guardrails)</h2>
+        <div class="kvs">
+          <div class="kv"><b>Intent</b><div>Chit‑chat → bypass RAG, no citations. Book_QA → retrieve + require citations.</div></div>
+          <div class="kv"><b>Similarity cutoff</b><div>If all blocks are filtered out, send empty context → model must refuse (no forced page numbers).</div></div>
+          <div class="kv"><b>Guardrail</b><div>For Book_QA answers, if the model omits citations, append (p. N) from retrieved blocks or parse from answer.</div></div>
+          <div class="kv"><b>History</b><div>ConversationBufferMemory injects prior messages into the prompt for continuity.</div></div>
+        </div>
+        <div class="hr"></div>
+        <h3>Success Criteria</h3>
+        <ul>
+          <li>All factual answers include page citations for Book_QA.</li>
+          <li>Chit‑chat/meta answers have no citations.</li>
+          <li>When context is empty (or cutoff removes all), answer is a clear refusal.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Prompt Skeleton</h2>
+        <pre><code>&lt;system&gt;
+You are TutorAI. Answer <strong>only</strong> from the provided book context.
+If answer not in context, refuse. Include page citations like (p. N).
+{system_description}
+
+&lt;history&gt;
+...prior user/assistant turns...
+
+&lt;user&gt;
+User query:
+{user_query}
+
+Book context (use ONLY this; cite every claim):
+{context}
+
+Guidelines:
+{guidelines}
+&lt;/user&gt;</code></pre>
+        <div class="mini">Placeholders are resolved at runtime. Context is constructed from retrieved chunks with known page numbers.</div>
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <h2>Data Contracts</h2>
+        <h3>Retrieved Block</h3>
+        <pre><code>{
+  "text": "...chunk content...",
+  "page_number": 42,
+  "score": 0.37,            // FAISS distance (lower = more similar)
+  "metadata": {"chunk_id": "book|p42|c3", "source_id": "..."},
+  "citation": "(p. 42)"
+}</code></pre>
+        <h3>Driver Response</h3>
+        <pre><code>{
+  "model": "phi-3-mini-4k-instruct",
+  "answer": "...final text...",
+  "citations_pages": [12, 42, 45],
+  "retrieved_context": [...],
+  "history_len": 7
+}</code></pre>
+      </div>
+
+      <div class="card">
+        <h2>Typical Paths</h2>
+        <h3>Book_QA (happy path)</h3>
+        <ol>
+          <li>User asks a question about charts.</li>
+          <li>Intent: book_qa → retrieve K chunks → cutoff.</li>
+          <li>Prompt assembled → LLM generates.</li>
+          <li>Guardrail ensures citations; answer returned with page list.</li>
+        </ol>
+        <h3>Chit‑Chat</h3>
+        <ol>
+          <li>User says "hi" → intent: chit‑chat.</li>
+          <li>Bypass retrieval & guardrail citations → short capability reply.</li>
+        </ol>
+        <h3>No Relevant Context</h3>
+        <ol>
+          <li>Query outside the book, or cutoff too strict.</li>
+          <li>Context empty → model returns refusal (no page numbers).</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Present This Slide</h2>
+      <div class="mini">Use this page as a single-slide overview. The diagram at the top shows the pipeline; the sections below provide the exact rules, prompt, and I/O schemas.</div>
+    </div>
+  </div>
+</body>
+</html>

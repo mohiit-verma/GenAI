@@ -1,0 +1,14 @@
+#
+Installs
+install
+requests>=2.32.5
+langchain-community
+pypdf
+faiss-cpu
+tiktoken
+transformers
+accelerate
+gradio
+langchain>=0.2.0
+sentence-transformers>=2.2.2
+torch
