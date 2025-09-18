@@ -9,6 +9,8 @@ from .llm import TutorAIConversationPipeline, GuardrailConfig
 from .utils import read_pdf_pages, stable_pdf_id
 import traceback
 from typing import Any, Dict
+from dotenv import load_dotenv
+load_dotenv()  # take environment variables from .env.
 
 class TutorAIDashboard:
     """
@@ -230,7 +232,7 @@ class TutorAIDashboard:
                         msg = gr.Textbox(
                             label="Your question",
                             placeholder="Ask about 'Storytelling with Data' (answers must cite p. N)",
-                            scale=8,
+                            scale=20,
                         )
                         send = gr.Button("Send", variant="primary", scale=1)
                     clear = gr.Button("Clear conversation")

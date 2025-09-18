@@ -7,4 +7,4 @@ dashboard = TutorAIDashboard(
     default_book_url=DEFAULT_BOOK_URL,
     chunk_cfg=ChunkingConfig(chunk_size=900, chunk_overlap=150),)
 app = dashboard.build_app()
-app.launch()
+app.launch(debug=True, show_error=True)
