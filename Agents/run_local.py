@@ -4,6 +4,7 @@ from agent.personalization import load_persona
 from agent.tools import save_markdown
 
 if __name__ == "__main__":
+    print("Parsing arguments...")
     ap = argparse.ArgumentParser()
     ap.add_argument("--days", type=int, default=30)
     ap.add_argument("--topics", type=str, default="")
@@ -12,12 +13,17 @@ if __name__ == "__main__":
     ap.add_argument("--prefix", type=str, default="genai-newsletter")
     args = ap.parse_args()
 
+    print("Building graph...")
     graph = build_graph()
+    print("Loading persona...")
+    persona = load_persona(args.persona or None)
     state = {
         "days": args.days,
         "topics": args.topics,
-        "persona": load_persona(args.persona or None)
+        "persona": persona
     }
+    print("Invoking graph with state:", state)
     final = graph.invoke(state)
+    print("Saving markdown output...")
     path = save_markdown(final["markdown"], args.out_dir, args.prefix)
     print(f"Saved → {os.path.abspath(path)}")
