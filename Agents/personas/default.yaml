@@ -1,0 +1,13 @@
+display_name: "Mohit"
+seniority: "lead data scientist"
+company: "Zenon"
+tone: "crisp, practical, executive-ready"
+interests:
+  - "agent frameworks"
+  - "evaluation & safety"
+  - "RAG architectures"
+  - "enterprise adoption"
+callouts:
+  - "impact on cost, latency, reliability"
+  - "open-source vs closed comparisons"
+  - "what to watch next"
